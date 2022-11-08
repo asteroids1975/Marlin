@@ -702,7 +702,8 @@ int package_to_wifi(WIFI_RET_TYPE type, uint8_t *buf, int len) {
 }
 
 
-#define SEND_OK_TO_WIFI send_to_wifi((uint8_t *)"ok\r\n", strlen("ok\r\n"))
+#define SEND_OK_TO_WIFI send_to_wifi((uint8_t *)"ok ;\r\n", 6)
+#define SEND_OK_TO_WIFI_REM(rem)  send_to_wifi((uint8_t *)("ok ; " rem "\r\n"), strlen("ok ; " rem "\r\n"))
 int send_to_wifi(uint8_t *buf, int len) { return package_to_wifi(WIFI_TRANS_INF, buf, len); }
 
 void set_cur_file_sys(int fileType) { gCfgItems.fileSysType = fileType; }
@@ -1068,7 +1069,7 @@ static void wifi_gcode_exec(uint8_t *cmd_line) {
         case 27:
           // Report print rate
           if ((uiCfg.print_state == WORKING) || (uiCfg.print_state == PAUSED)|| (uiCfg.print_state == REPRINTING)) {
-            print_rate = uiCfg.totalSend;
+            print_rate = uiCfg.print_progress;
             ZERO(tempBuf);
             sprintf_P((char *)tempBuf, PSTR("M27 %d\r\n"), print_rate);
             send_to_wifi((uint8_t *)tempBuf, strlen((char *)tempBuf));
@@ -1208,6 +1209,10 @@ static void wifi_gcode_exec(uint8_t *cmd_line) {
             wifi_ret_ack();
             send_to_wifi((uint8_t *)"M997 PAUSE\r\n", strlen("M997 PAUSE\r\n"));
           }
+          else if (uiCfg.print_state == COMPLETED) {
+            SEND_OK_TO_WIFI_REM("M997 completed");
+            send_to_wifi((uint8_t *)"M997 COMPLETED\r\n", strlen("M997 COMPLETED\r\n"));
+          }              
           if (!uiCfg.command_send) get_wifi_list_command_send();
           break;
 
@@ -1222,7 +1227,21 @@ static void wifi_gcode_exec(uint8_t *cmd_line) {
         case 115:
           ZERO(tempBuf);
           SEND_OK_TO_WIFI;
-          send_to_wifi((uint8_t *)"FIRMWARE_NAME:Robin_nano\r\n", strlen("FIRMWARE_NAME:Robin_nano\r\n"));
+          //send_to_wifi((uint8_t *)"FIRMWARE_NAME:Robin_nano\r\n", strlen("FIRMWARE_NAME:Robin_nano\r\n"));
+          sprintf_P((char *)tempBuf, PSTR("FIRMWARE_NAME:Marlin_" DETAILED_BUILD_VERSION "_by_" STRING_CONFIG_H_AUTHOR "_(" __DATE__ "-" __TIME__ ") \r\n"));
+          send_to_wifi((uint8_t *)tempBuf, strlen((char *)tempBuf));
+          //sprintf_P((char *)tempBuf, PSTR("SOURCE_CODE_URL:" SOURCE_CODE_URL " \r\n"));
+          //send_to_wifi((uint8_t *)tempBuf, strlen((char *)tempBuf));
+          sprintf_P((char *)tempBuf, PSTR("PROTOCOL_VERSION:" PROTOCOL_VERSION " \r\n"));
+          send_to_wifi((uint8_t *)tempBuf, strlen((char *)tempBuf));
+          sprintf_P((char *)tempBuf, PSTR("MACHINE_TYPE:" MACHINE_NAME " \r\n"));
+          send_to_wifi((uint8_t *)tempBuf, strlen((char *)tempBuf));
+          sprintf_P((char *)tempBuf, PSTR("EXTRUDER_COUNT:" STRINGIFY(EXTRUDERS) " \r\n"));
+          send_to_wifi((uint8_t *)tempBuf, strlen((char *)tempBuf));
+          #ifdef MACHINE_UUID 
+            sprintf_P((char *)tempBuf, PSTR("UUID:" MACHINE_UUID " \r\n"));
+            send_to_wifi((uint8_t *)tempBuf, strlen((char *)tempBuf));
+          #endif
           break;
 
         default:

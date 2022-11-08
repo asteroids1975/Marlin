@@ -259,8 +259,8 @@ uint32_t lv_get_pic_addr(uint8_t *Pname) {
   return addr;
 }
 
-const char *assetsPath = "assets";
-const char *bakPath = "_assets";
+const char *assetsPath = "assets_Marlin";
+const char *bakPath = "_assets_Marlin";
 
 void spiFlashErase_PIC() {
   volatile uint32_t pic_sectorcnt = 0;

@@ -70,3 +70,7 @@ def encrypt_mks(source, target, env, new_name):
 
 def add_post_action(action):
     env.AddPostAction(str(Path("$BUILD_DIR", "${PROGNAME}.bin")), action);
+    env.Replace(
+    UPLOADER="curl",
+    UPLOADCMD="$UPLOADER -v -H 'Content-Type:application/octet-stream' http://$UPLOADERFLAGS/upload?X-Filename=Robin_Nano35.bin --data-binary @$BUILD_DIR/Robin_nano35.bin"
+)
